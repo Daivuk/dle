@@ -44,45 +44,24 @@ namespace dle
 	//-------------------------------------------------------------------------
 	// Effects
 
-	class Pool;
-
-	class Object {
+	class Effect {
 	public:
-		void release();
-		void retain();
-	protected:
-		virtual void dealloc() = 0;
-		int m_refCount = 1;
-	};
-
-	class Effect : public Object {
-	public:
-		virtual void apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize) = 0;
-	protected:
-		void dealloc();
+		virtual void apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize) const = 0;
 	};
 
 	class ColorOverlay : public Effect {
 	public:
 		Color		color;
 		eBlendMode	blendMode;
-		static ColorOverlay* create(const Color& in_color = { 255, 0, 0, 255 }, const eBlendMode in_blendMode = kBlendMode_Normal);
-		void apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize);
-	private:
-		friend Pool;
-		ColorOverlay() {}
-		~ColorOverlay() {}
+		ColorOverlay(const Color& in_color = { 255, 0, 0, 255 }, const eBlendMode in_blendMode = kBlendMode_Normal);
+		void apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize) const;
 	};
 
 	class Blur : public Effect {
 	public:
 		int			size;
-		static Blur* create(const int size);
-		void apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize);
-	private:
-		friend Pool;
-		Blur() {}
-		~Blur() {}
+		Blur(const int size);
+		void apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize) const;
 	};
 
 	class Outline : public Effect {
@@ -90,12 +69,8 @@ namespace dle
 		Color		color;
 		int			size;
 		eBlendMode	blendMode;
-		static Outline* create(const Color& color = { 0, 0, 0, 245 }, const int size = 2, const eBlendMode blendMode = kBlendMode_Normal);
-		void apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize);
-	private:
-		friend Pool;
-		Outline() {}
-		~Outline() {}
+		Outline(const Color& color = { 0, 0, 0, 245 }, const int size = 2, const eBlendMode blendMode = kBlendMode_Normal);
+		void apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize) const;
 	};
 
 	class Shadow : public Effect {
@@ -104,12 +79,8 @@ namespace dle
 		Offset		offset;
 		int			size;
 		eBlendMode	blendMode;
-		static Shadow* create(const Color& color = {0, 0, 0, 255}, const Offset& offset = { 3, 5 }, const int size = 10, const eBlendMode blendMode = kBlendMode_Multiply);
-		void apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize);
-	private:
-		friend Pool;
-		Shadow() {}
-		~Shadow() {}
+		Shadow(const Color& color = { 0, 0, 0, 255 }, const Offset& offset = { 3, 5 }, const int size = 10, const eBlendMode blendMode = kBlendMode_Multiply);
+		void apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize) const;
 	};
 	
 	class InnerShadow : public Effect {
@@ -118,12 +89,8 @@ namespace dle
 		Offset		offset;
 		int			size;
 		eBlendMode	blendMode;
-		static InnerShadow* create(const Color& color = { 0, 0, 0, 245 }, const Offset& offset = { 3, 3 }, const int size = 3, const eBlendMode in_blendMode = kBlendMode_Multiply);
-		void apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize);
-	private:
-		friend Pool;
-		InnerShadow() {}
-		~InnerShadow() {}
+		InnerShadow(const Color& color = { 0, 0, 0, 245 }, const Offset& offset = { 3, 3 }, const int size = 3, const eBlendMode in_blendMode = kBlendMode_Multiply);
+		void apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize) const;
 	};
 
 	class Glow : public Effect {
@@ -131,12 +98,8 @@ namespace dle
 		Color		color;
 		int			size;
 		eBlendMode	blendMode;
-		static Glow* create(const Color& color = { 255, 255, 190, 150 }, const int size = 5, const eBlendMode blendMode = kBlendMode_Additive);
-		void apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize);
-	private:
-		friend Pool;
-		Glow() {}
-		~Glow() {}
+		Glow(const Color& color = { 255, 255, 190, 150 }, const int size = 5, const eBlendMode blendMode = kBlendMode_Additive);
+		void apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize) const;
 	};
 
 	class InnerGlow : public Effect {
@@ -144,12 +107,8 @@ namespace dle
 		Color		color;
 		int			size;
 		eBlendMode	blendMode;
-		static InnerGlow* create(const Color& color = { 255, 255, 190, 150 }, const int size = 5, const eBlendMode blendMode = kBlendMode_Additive);
-		void apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize);
-	private:
-		friend Pool;
-		InnerGlow() {}
-		~InnerGlow() {}
+		InnerGlow(const Color& color = {255, 255, 190, 150}, const int size = 5, const eBlendMode blendMode = kBlendMode_Additive);
+		void apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize) const;
 	};
 
 	class Gradient : public Effect {
@@ -157,45 +116,65 @@ namespace dle
 		std::vector<GradientKey> keys;
 		int angle;
 		eBlendMode blendMode;
-		static Gradient* create(const std::vector<GradientKey>& keys, int angle = 0, const eBlendMode blendMode = kBlendMode_Normal);
-		void apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize);
-	private:
-		friend Pool;
-		Gradient() {}
-		~Gradient() {}
+		Gradient(const std::vector<GradientKey>& keys = {}, int angle = 0, const eBlendMode blendMode = kBlendMode_Normal);
+		void apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize) const;
 	};
 
 
 	//-------------------------------------------------------------------------
 	// Layers
 
-	class Layer : public Object	{
+	class Layer	{
 	public:
 		Color*				src;
 		Size				size;
 		eBlendMode			blendMode;
-		static Layer* create(unsigned char* src, const Size& size, const eBlendMode blendMode = kBlendMode_Normal);
-		static Layer* create(Color* src, const Size& size, const eBlendMode blendMode = kBlendMode_Normal);
-		static Layer* create(unsigned char* src, const Size& size, const std::vector<Effect*>& effects, const eBlendMode blendMode = kBlendMode_Normal);
-		static Layer* create(Color* src, const Size& size, const std::vector<Effect*>& effects, const eBlendMode blendMode = kBlendMode_Normal);
-		void addEffect(Effect* pEffect);
-		void removeEffect(Effect* pEffect);
-		void bake(Color* dst) const;
-	protected:
-		void dealloc();
-	private:
-		friend Pool;
-		std::vector<Effect*>effects;
-		Layer() {}
+
+		Layer(void* in_src, const Size& in_size, const eBlendMode in_blendMode = kBlendMode_Normal) :
+			size(in_size), blendMode(in_blendMode) {
+			src = new Color[size.width * size.height];
+			memcpy(src, in_src, sizeof(Color) * size.width * size.height);
+		}
+		template<typename... Effects> Layer(void* in_src, const Size& in_size, const eBlendMode in_blendMode, const Effects&... effects) : size(in_size), blendMode(in_blendMode) {
+			src = new Color[size.width * size.height];
+			memcpy(src, in_src, sizeof(Color) * size.width * size.height);
+			addEffect(effects...);
+		}
 		~Layer();
+		template<typename T, typename... Effects> void addEffect(const T& effect, const Effects&... effects) {
+			addEffect(effect);
+			addEffect(effects...);
+		}
+		template<typename T> void addEffect(const T& effect) {
+			T* pEffect = new T();
+			*pEffect = effect;
+			effects.push_back(pEffect);
+		}
+		void bake(void* dst) const;
+		void bake(Color* dst) const;
+	private:
+		std::vector<Effect*> effects;
 	};
 
 
 	//-------------------------------------------------------------------------
 	// Functions
-	void setMaxImageSize(const int in_maxImageSize = 4096);
-	void bake(unsigned char* dst, const std::vector<Layer*>& layers);
-	void bake(Color* dst, const std::vector<Layer*>& layers);
+	template<typename... Effects> void applyEffects(void* dstAndSrc, const Size& srcSize, const Effects&... effects) {
+		Layer layer((Color*) dstAndSrc, srcSize, kBlendMode_Normal, effects...);
+		layer.bake((Color*) dstAndSrc);
+	}
+
+	template<typename... Effects> void applyEffects(void* dst, void* src, const Size& srcSize, const Effects&... effects) {
+		Layer layer((Color*) src, srcSize, kBlendMode_Normal, effects...);
+		layer.bake((Color*) dst);
+	}
+
+	void applyLayers(void* dst, const Size& srcSize, const Layer& layer);
+
+	template<typename... Layers> void applyLayers(void* dst, const Size& srcSize, const Layer& layer, const Layers&... layers) {
+		applyLayers(dst, srcSize, layer);
+		applyLayers(dst, srcSize, layers...);
+	}
 }
 
 #endif

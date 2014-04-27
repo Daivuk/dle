@@ -8,56 +8,29 @@ int main()
 	// Load the image
 	FILE* pFic;
 	fopen_s(&pFic, "img.raw", "rb");
-	unsigned char* pImage = new unsigned char[512 * 512 * 4];
-	fread(pImage, 1, 512 * 512 * 4, pFic);
+	unsigned char* pImageData = new unsigned char[512 * 512 * 4];
+	fread(pImageData, 1, 512 * 512 * 4, pFic);
 	fclose(pFic);
 
-	// Create effects
-	dle::ColorOverlay* pColorOverlay = dle::ColorOverlay::create({ 255, 0, 100, 255 });
-	dle::Outline* pOutline = dle::Outline::create();
-	dle::Shadow* pShadow = dle::Shadow::create();
-	dle::InnerShadow* pInnerShadow = dle::InnerShadow::create();
-	dle::Glow* pGlow = dle::Glow::create();
-	dle::InnerGlow* pInnerGlow = dle::InnerGlow::create();
-	dle::Gradient* pGradient = dle::Gradient::create({
-		{ { 41, 137, 204, 255 }, 0 },
-		{ { 255, 255, 255, 255 }, 50 },
-		{ { 144, 106, 0, 255 }, 52 },
-		{ { 217, 159, 0, 255 }, 64 },
-		{ { 255, 255, 255, 255 }, 100 },
-	}, -45);
 
-	// Create layers
-	dle::Layer* pLayer = dle::Layer::create(pImage, { 512, 512 }, { 
-	//	pColorOverlay,
-		pGradient,
-	//	pInnerGlow,
-	//	pInnerShadow,
-		pShadow,
-	//	pOutline,
-	//	pGlow,
-	});
 
-	// Bake
-	memset(pImage, 0, 512 * 512 * 4);
-	dle::bake(pImage, { 
-		pLayer,
-	});
+	dle::Size imageSize{ 512, 512 };
 
-	// Release resources
-	pColorOverlay->release();
-	pGradient->release();
-	pOutline->release();
-	pShadow->release();
-	pInnerShadow->release();
-	pGlow->release();
-	pInnerGlow->release();
-	pLayer->release();
+	dle::applyLayers(pImageData, imageSize,
+		dle::Layer(pImageData, imageSize, dle::kBlendMode_Normal,
+			dle::Outline(),
+			dle::Shadow()),
+		dle::Layer(pImageData, imageSize, dle::kBlendMode_Multiply,
+			dle::ColorOverlay(),
+			dle::InnerGlow()));
+
+
 
 	// Save image
 	fopen_s(&pFic, "output.raw", "wb");
-	fwrite(pImage, 1, 512 * 512 * 4, pFic);
+	fwrite(pImageData, 1, 512 * 512 * 4, pFic);
 	fclose(pFic);
+	delete[] pImageData;
 
 	// Pause then quit
 	system("pause");
