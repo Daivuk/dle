@@ -157,10 +157,10 @@ namespace dle {
 		Color tmpOut;
 		switch (blendmode) {
 			case kBlendMode_Normal:
-				tmpOut.r = dle::min(255, src.r * src.a / 255 + dst.r * (255 - src.a) / 255);
-				tmpOut.g = dle::min(255, src.g * src.a / 255 + dst.g * (255 - src.a) / 255);
-				tmpOut.b = dle::min(255, src.b * src.a / 255 + dst.b * (255 - src.a) / 255);
-				tmpOut.a = dle::min(255, src.a * src.a / 255 + dst.a * (255 - src.a) / 255);
+				tmpOut.r = src.r;
+				tmpOut.g = src.g;
+				tmpOut.b = src.b;
+				tmpOut.a = dle::min(255, dst.a + src.a);
 
 				// Lerp final alpha composite
 				lerp(out, dst, tmpOut, src.a);
