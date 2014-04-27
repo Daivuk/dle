@@ -153,25 +153,42 @@ namespace dle {
 	}
 
 	void blend(Color& out, const Color& dst, const Color& src, const eBlendMode& blendmode) {
+		Color tmpDst;
+		Color tmpOut;
 		switch (blendmode) {
 			case kBlendMode_Normal:
-				out.r = dle::min(255, src.r * src.a / 255 + dst.r * (255 - src.a) / 255);
-				out.g = dle::min(255, src.g * src.a / 255 + dst.g * (255 - src.a) / 255);
-				out.b = dle::min(255, src.b * src.a / 255 + dst.b * (255 - src.a) / 255);
-				out.a = dle::max(dst.a, src.a);
+				tmpOut.r = dle::min(255, src.r * src.a / 255 + dst.r * (255 - src.a) / 255);
+				tmpOut.g = dle::min(255, src.g * src.a / 255 + dst.g * (255 - src.a) / 255);
+				tmpOut.b = dle::min(255, src.b * src.a / 255 + dst.b * (255 - src.a) / 255);
+				tmpOut.a = dle::min(255, src.a * src.a / 255 + dst.a * (255 - src.a) / 255);
+
+				// Lerp final alpha composite
+				lerp(out, dst, tmpOut, src.a);
 				break;
 			case kBlendMode_Multiply:
-				out.r = dst.r * src.r / 255;
-				out.g = dst.g * src.g / 255;
-				out.b = dst.b * src.b / 255;
-				out.a = src.a;
-				lerpPreserveAlpha(out, dst, out, src.a);
+				tmpOut.r = dst.r * src.r / 255;
+				tmpOut.g = dst.g * src.g / 255;
+				tmpOut.b = dst.b * src.b / 255;
+				tmpOut.a = dle::min(255, dst.a + src.a);
+
+				// Lerp final alpha composite
+				lerp(out, dst, tmpOut, src.a);
 				break;
 			case kBlendMode_Additive:
-				out.r = dle::min(255, dst.r + src.r * src.a / 255);
-				out.g = dle::min(255, dst.g + src.g * src.a / 255);
-				out.b = dle::min(255, dst.b + src.b * src.a / 255);
-				out.a = dle::max(dst.a, src.a);
+				// First, we want to make the dst color the same as our src color in the case
+				// of the alpha being very low. Because images might be black and we end up with black
+				// shadow. And we don't want that
+				lerpPreserveAlpha(tmpDst, src, dst, dst.a);
+
+				// This is screen in photoshop. It's not a real additive. But it gives a better result
+				// 1 - (1 - a) * (1 - b)
+				tmpOut.r = 255 - (255 - dst.r) * (255 - src.r) / 255;
+				tmpOut.g = 255 - (255 - dst.g) * (255 - src.g) / 255;
+				tmpOut.b = 255 - (255 - dst.b) * (255 - src.b) / 255;
+				tmpOut.a = dle::min(255, dst.a + src.a);
+
+				// Lerp final alpha composite
+				lerp(out, tmpDst, tmpOut, src.a);
 				break;
 		}
 	}
@@ -426,119 +443,42 @@ namespace dle {
 		delete[] blurImg;
 	}
 
-/*
-	Glow::Glow(const Color& in_color, const int in_size, const eBlendMode in_blendMode) :
-		color(in_color), size{ in_size }, blendMode{ in_blendMode } {};
 
-	void Glow::apply(Color* src, const Size& srcSize)
+
+	Glow* Glow::create(const Color& color, const int size, const eBlendMode blendMode) {
+		lazyInitPool();
+		Glow* pGlow = new (g_effectPool.alloc()) Glow();
+		pGlow->color = color;
+		pGlow->size = size;
+		pGlow->blendMode = blendMode;
+		return pGlow;
+	}
+
+	void Glow::apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize)
 	{
-		lazyInitTmpBuf();
+		Color* blurImg = new Color[srcSize.width * srcSize.height];
+		memset(blurImg, 0, sizeof(Color) * srcSize.width * srcSize.height);
+		dle::Blur* pBlur = dle::Blur::create(size);
+		pBlur->apply(NULL, blurImg, src, srcSize);
+		pBlur->release();
 
-		int accum;
-		int sizeTotal = size * 2 + 1;
-		Color* pLookupIter;
-		Color* pCur;
-		Color* pLookup;
-		Color* pEnd;
-		Color* pDst;
-
-		// Blur U, only care about alpha component
-		pCur = src + size;
-		pLookup = src;
-		pEnd = src + srcSize.width * srcSize.height - size;
-		pDst = g_tmpBuf + size;
-		while (pCur < pEnd)
-		{
-			accum = pLookup->a;
-
-			pLookupIter = pLookup + 1;
-			for (int i = 1; i < sizeTotal; ++i, ++pLookupIter)
-			{
-				accum += pLookupIter->a;
-			}
-
-			pDst->a = accum / sizeTotal;
-
-			++pCur;
-			++pLookup;
-			++pDst;
-		}
-
-		// Blur V, but use shadow color
-		pCur = g_tmpBuf + size * srcSize.width;
-		pLookup = g_tmpBuf;
-		pEnd = g_tmpBuf + srcSize.width * srcSize.height - size * srcSize.width;
-		pDst = src + size * srcSize.width;
+		Color* pBlurPx = blurImg;
+		Color* pEnd = baseLayer + srcSize.width * srcSize.height;
 		Color final = color;
-		Color tmp;
-		switch (blendMode)
-		{
-		case kBlendMode_Normal:
-			while (pCur < pEnd)
-			{
-				accum = pLookup->a;
-				pLookupIter = pLookup + srcSize.width;
-				for (int i = 1; i < sizeTotal; ++i, pLookupIter += srcSize.width)
-					accum += pLookupIter->a;
-				final.a = accum / sizeTotal;
-				final.a = (final.a * color.a) / 255;
-				lerpPreserveAlpha(*pDst, final, *pDst, pDst->a);
-				++pCur;
-				++pLookup;
-				++pDst;
-			}
-			break;
-		case kBlendMode_Multiply:
-			while (pCur < pEnd)
-			{
-				accum = pLookup->a;
-				pLookupIter = pLookup + srcSize.width;
-				for (int i = 1; i < sizeTotal; ++i, pLookupIter += srcSize.width)
-					accum += pLookupIter->a;
-				final.a = accum / sizeTotal;
-				final.a = (final.a * color.a) / 255;
-
-				lerpPreserveAlpha(tmp, final, *pDst, pDst->a);
-
-				pDst->r = (pCur->r * tmp.r) / 255;
-				pDst->g = (pCur->g * tmp.g) / 255;
-				pDst->b = (pCur->b * tmp.b) / 255;
-				pDst->a = (pCur->a * tmp.a) / 255;
-
-				++pCur;
-				++pLookup;
-				++pDst;
-			}
-			break;
-		case kBlendMode_Additive:
-			while (pCur < pEnd)
-			{
-				accum = pLookup->a;
-				pLookupIter = pLookup + srcSize.width;
-				for (int i = 1; i < sizeTotal; ++i, pLookupIter += srcSize.width)
-					accum += pLookupIter->a;
-				final.a = accum / sizeTotal;			
-				final.a = dle::clamp(final.a, 0, 128);
-				final.a = dle::min(255, final.a * 2);
-				final.a = (final.a * color.a) / 255;
-
-				lerpPreserveAlpha(tmp, final, *pDst, pDst->a);
-
-				pDst->r = dle::min(255, (pDst->r * pDst->a) / 255 + tmp.r);
-				pDst->g = dle::min(255, (pDst->g * pDst->a) / 255 + tmp.g);
-				pDst->b = dle::min(255, (pDst->b * pDst->a) / 255 + tmp.b);
-				pDst->a = tmp.a;
-
-				++pCur;
-				++pLookup;
-				++pDst;
-			}
-			break;
+		while (baseLayer != pEnd) {
+			final.a = pBlurPx->a;
+			final.a = dle::clamp(final.a, 0, 128);
+			final.a = dle::min(255, final.a * 2);
+			final.a = final.a * color.a / 255;
+			blend(*baseLayer, *baseLayer, final, blendMode);
+			++baseLayer; ++src; ++pBlurPx;
 		}
+
+		delete[] blurImg;
 	}
 
 
-
+/*
 	InnerGlow::InnerGlow(const Color& in_color, const int in_size, const eBlendMode in_blendMode) :
 		color(in_color), size{ in_size }, blendMode{ in_blendMode } {};
 

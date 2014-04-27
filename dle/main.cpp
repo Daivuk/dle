@@ -17,12 +17,14 @@ int main()
 	dle::Outline* pOutline = dle::Outline::create();
 	dle::Shadow* pShadow = dle::Shadow::create();
 	dle::InnerShadow* pInnerShadow = dle::InnerShadow::create();
+	dle::Glow* pGlow = dle::Glow::create();
 
 	// Create layers
 	dle::Layer* pLayer = dle::Layer::create(pImage, { 512, 512 }, { 
 		pColorOverlay,
-		pInnerShadow,
+	//	pInnerShadow,
 		pShadow,
+	//	pGlow,
 		pOutline,
 	});
 
@@ -37,6 +39,7 @@ int main()
 	pOutline->release();
 	pShadow->release();
 	pInnerShadow->release();
+	pGlow->release();
 	pLayer->release();
 
 	// Save image

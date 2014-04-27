@@ -90,7 +90,7 @@ namespace dle
 		Color		color;
 		int			size;
 		eBlendMode	blendMode;
-		static Outline* create(const Color& color = { 0, 0, 0, 245 }, const int size = 1, const eBlendMode blendMode = kBlendMode_Normal);
+		static Outline* create(const Color& color = { 0, 0, 0, 245 }, const int size = 2, const eBlendMode blendMode = kBlendMode_Normal);
 		void apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize);
 	private:
 		friend Pool;
@@ -111,7 +111,6 @@ namespace dle
 		Shadow() {}
 		~Shadow() {}
 	};
-
 	
 	class InnerShadow : public Effect {
 	public:
@@ -119,27 +118,27 @@ namespace dle
 		Offset		offset;
 		int			size;
 		eBlendMode	blendMode;
-		static InnerShadow* create(const Color& in_color = { 0, 0, 0, 245 }, const Offset& in_offset = { 3, 3 }, const int in_size = 3, const eBlendMode in_blendMode = kBlendMode_Multiply);
+		static InnerShadow* create(const Color& color = { 0, 0, 0, 245 }, const Offset& offset = { 3, 3 }, const int size = 3, const eBlendMode in_blendMode = kBlendMode_Multiply);
 		void apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize);
 	private:
 		friend Pool;
 		InnerShadow() {}
 		~InnerShadow() {}
 	};
-/*
+
 	class Glow : public Effect {
 	public:
 		Color		color;
 		int			size;
 		eBlendMode	blendMode;
-		static Glow* create(const Color& in_color, const int in_size, const eBlendMode in_blendMode = kBlendMode_Additive);
-		void apply(Color* src, const Size& srcSize);
+		static Glow* create(const Color& color = { 255, 255, 190, 192}, const int size = 5, const eBlendMode blendMode = kBlendMode_Additive);
+		void apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize);
 	private:
 		friend Pool;
 		Glow() {}
 		~Glow() {}
 	};
-
+/*
 	class InnerGlow : public Effect	{
 	public:
 		Color		color;
