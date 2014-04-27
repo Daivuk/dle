@@ -131,14 +131,27 @@ namespace dle
 		Color		color;
 		int			size;
 		eBlendMode	blendMode;
-		static Glow* create(const Color& color = { 255, 255, 190, 192}, const int size = 5, const eBlendMode blendMode = kBlendMode_Additive);
+		static Glow* create(const Color& color = { 255, 255, 190, 150 }, const int size = 5, const eBlendMode blendMode = kBlendMode_Additive);
 		void apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize);
 	private:
 		friend Pool;
 		Glow() {}
 		~Glow() {}
 	};
-/*
+
+	class InnerGlow : public Effect {
+	public:
+		Color		color;
+		int			size;
+		eBlendMode	blendMode;
+		static InnerGlow* create(const Color& color = { 255, 255, 190, 150 }, const int size = 5, const eBlendMode blendMode = kBlendMode_Additive);
+		void apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize);
+	private:
+		friend Pool;
+		InnerGlow() {}
+		~InnerGlow() {}
+	};
+	/*
 	class InnerGlow : public Effect	{
 	public:
 		Color		color;

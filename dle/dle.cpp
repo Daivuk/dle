@@ -478,6 +478,40 @@ namespace dle {
 	}
 
 
+
+	InnerGlow* InnerGlow::create(const Color& color, const int size, const eBlendMode blendMode) {
+		lazyInitPool();
+		InnerGlow* pInnerGlow = new (g_effectPool.alloc()) InnerGlow();
+		pInnerGlow->color = color;
+		pInnerGlow->size = size;
+		pInnerGlow->blendMode = blendMode;
+		return pInnerGlow;
+	}
+
+	void InnerGlow::apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize)
+	{
+		Color* blurImg = new Color[srcSize.width * srcSize.height];
+		memset(blurImg, 0, sizeof(Color) * srcSize.width * srcSize.height);
+		dle::Blur* pBlur = dle::Blur::create(size);
+		pBlur->apply(NULL, blurImg, src, srcSize);
+		pBlur->release();
+
+		Color* pBlurPx = blurImg;
+		Color* pEnd = dst + srcSize.width * srcSize.height;
+		Color final = color;
+		while (dst != pEnd) {
+			final.a = pBlurPx->a;
+			final.a = dle::clamp(final.a, 127, 255) - 127;
+			final.a = 255 - dle::min(255, final.a * 2);
+			final.a = final.a * color.a / 255;
+			final.a = final.a * src->a / 255;
+			blend(*dst, *dst, final, blendMode);
+			++dst; ++src; ++pBlurPx;
+		}
+
+		delete[] blurImg;
+	}
+
 /*
 	InnerGlow::InnerGlow(const Color& in_color, const int in_size, const eBlendMode in_blendMode) :
 		color(in_color), size{ in_size }, blendMode{ in_blendMode } {};
