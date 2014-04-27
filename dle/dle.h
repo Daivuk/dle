@@ -151,31 +151,19 @@ namespace dle
 		InnerGlow() {}
 		~InnerGlow() {}
 	};
-	/*
-	class InnerGlow : public Effect	{
-	public:
-		Color		color;
-		int			size;
-		eBlendMode	blendMode;
-		static InnerGlow* create(const Color& in_color, const int in_size, const eBlendMode in_blendMode = kBlendMode_Additive);
-		void apply(Color* src, const Size& srcSize);
-	private:
-		friend Pool;
-		InnerGlow() {}
-		~InnerGlow() {}
-	};
 
 	class Gradient : public Effect {
 	public:
 		std::vector<GradientKey> keys;
 		int angle;
-		static Gradient* create(const std::vector<GradientKey>& in_keys, int in_angle);
-		void apply(Color* src, const Size& srcSize);
+		eBlendMode blendMode;
+		static Gradient* create(const std::vector<GradientKey>& keys, int angle = 0, const eBlendMode blendMode = kBlendMode_Normal);
+		void apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize);
 	private:
 		friend Pool;
 		Gradient() {}
 		~Gradient() {}
-	};*/
+	};
 
 
 	//-------------------------------------------------------------------------

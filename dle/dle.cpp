@@ -101,10 +101,10 @@ namespace dle {
 		g_effectPool.registerType<Blur>();
 		g_effectPool.registerType<Outline>();
 		g_effectPool.registerType<Shadow>();
-	/*	g_effectPool.registerType<InnerShadow>();
+		g_effectPool.registerType<InnerShadow>();
 		g_effectPool.registerType<Glow>();
 		g_effectPool.registerType<InnerGlow>();
-		g_effectPool.registerType<Gradient>();*/
+		g_effectPool.registerType<Gradient>();
 		g_effectPool.create(1000);
 	}
 
@@ -512,118 +512,78 @@ namespace dle {
 		delete[] blurImg;
 	}
 
-/*
-	InnerGlow::InnerGlow(const Color& in_color, const int in_size, const eBlendMode in_blendMode) :
-		color(in_color), size{ in_size }, blendMode{ in_blendMode } {};
 
-	void InnerGlow::apply(Color* src, const Size& srcSize)
+	Gradient* Gradient::create(const std::vector<GradientKey>& keys, int angle, const eBlendMode blendMode) {
+		lazyInitPool();
+		Gradient* pGradient = new (g_effectPool.alloc()) Gradient();
+		pGradient->keys = keys;
+		pGradient->angle = wrapAngle(angle);
+		pGradient->blendMode = blendMode;
+		return pGradient;
+	}
+
+	void Gradient::apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize)
 	{
-		lazyInitTmpBuf();
+		if (!keys.size()) return;
 
-		int accum;
-		int sizeTotal = size * 2 + 1;
-		Color* pLookupIter;
-		Color* pCur;
-		Color* pLookup;
-		Color* pEnd;
-		Color* pDst;
+		Color* pCur = src;
+		const Color* pEnd = src + srcSize.width * srcSize.height;
+		int x = 0;
+		int y = 0;
+		int percent, localPercent;
+		Color final;
 
-		// Blur U, only care about alpha component
-		pCur = src + size;
-		pLookup = src;
-		pEnd = src + srcSize.width * srcSize.height - size;
-		pDst = g_tmpBuf + size;
-		while (pCur < pEnd)
-		{
-			accum = pLookup->a;
+		auto* pKey = &keys[0];
+		const auto* pKeyEnd = pKey + keys.size();
+		const int sintheta = g_sintable[angle] / 100;
+		const int costheta = g_costable[angle] / 100;
+		const int size = abs(sintheta * srcSize.width) + abs(costheta * srcSize.height);
+		while (pCur != pEnd) {
+			while (x != srcSize.width) {
+				if (sintheta >= 0) {
+					if (costheta >= 0) {
+						percent = (x * sintheta + y * costheta) * 10000 / size;
+					}
+					else {
+						percent = (x * sintheta + (srcSize.height - y) * -costheta) * 10000 / size;
+					}
+				}
+				else {
+					if (costheta >= 0) {
+						percent = ((srcSize.width - x) * -sintheta + y * costheta) * 10000 / size;
+					}
+					else {
+						percent = ((srcSize.width - x) * -sintheta + (srcSize.height - y) * -costheta) * 10000 / size;
+					}
+				}
+				percent = dle::min(percent, 10000);
+				percent = dle::max(percent, 0);
+				localPercent = 0;
 
-			pLookupIter = pLookup + 1;
-			for (int i = 1; i < sizeTotal; ++i, ++pLookupIter)
-			{
-				accum += pLookupIter->a;
+				pKey = &keys[0];
+				while (pKey != pKeyEnd) {
+					if (percent < pKey->percent * 100) {
+						percent = (percent - localPercent * 100) * 10000 / (pKey->percent * 100 - localPercent * 100);
+						lerpPercentile(final, final, pKey->color, percent);
+						break;
+					}
+					final = pKey->color;
+					localPercent = pKey->percent;
+					++pKey;
+				}
+
+				final.a = pCur->a * final.a / 255;
+				blend(*dst, *dst, final, blendMode);
+
+				++pCur; ++dst;
+				++x;
 			}
-
-			pDst->a = accum / sizeTotal;
-
-			++pCur;
-			++pLookup;
-			++pDst;
-		}
-
-		// Blur V, but use shadow color
-		pCur = g_tmpBuf + size * srcSize.width;
-		pLookup = g_tmpBuf;
-		pEnd = g_tmpBuf + srcSize.width * srcSize.height - size * srcSize.width;
-		pDst = src + size * srcSize.width;
-		Color final = color;
-		Color tmp;
-		switch (blendMode)
-		{
-		case kBlendMode_Normal:
-			while (pCur < pEnd)
-			{
-				accum = pLookup->a;
-				pLookupIter = pLookup + srcSize.width;
-				for (int i = 1; i < sizeTotal; ++i, pLookupIter += srcSize.width)
-					accum += pLookupIter->a;
-				final.a = accum / sizeTotal;
-				final.a = (final.a * color.a) / 255;
-				lerpPreserveAlpha(tmp, *pDst, final, (255 - final.a) * color.a / 255);
-				++pCur;
-				++pLookup;
-				++pDst;
-			}
-			break;
-		case kBlendMode_Multiply:
-			while (pCur < pEnd)
-			{
-				accum = pLookup->a;
-				pLookupIter = pLookup + srcSize.width;
-				for (int i = 1; i < sizeTotal; ++i, pLookupIter += srcSize.width)
-					accum += pLookupIter->a;
-				final.a = accum / sizeTotal;
-				final.a = (final.a * color.a) / 255;
-
-				lerpPreserveAlpha(tmp, *pDst, final, (255 - final.a) * color.a / 255);
-
-				pDst->r = (pCur->r * tmp.r) / 255;
-				pDst->g = (pCur->g * tmp.g) / 255;
-				pDst->b = (pCur->b * tmp.b) / 255;
-				pDst->a = (pCur->a * tmp.a) / 255;
-
-				++pCur;
-				++pLookup;
-				++pDst;
-			}
-			break;
-		case kBlendMode_Additive:
-			color.r = color.r * color.a / 255;
-			color.g = color.g * color.a / 255;
-			color.b = color.b * color.a / 255;
-			while (pCur < pEnd)
-			{
-				accum = pLookup->a;
-				pLookupIter = pLookup + srcSize.width;
-				for (int i = 1; i < sizeTotal; ++i, pLookupIter += srcSize.width)
-					accum += pLookupIter->a;
-
-				final.r = dle::min(255, color.r + pDst->r);
-				final.g = dle::min(255, color.g + pDst->g);
-				final.b = dle::min(255, color.b + pDst->b);
-				final.a = pDst->a;
-				accum = accum / sizeTotal;
-				accum = dle::clamp(accum, 128, 255) - 128;
-				accum = dle::min(255, accum * 2);
-
-				lerpPreserveAlpha(*pDst, final, *pDst, accum);
-
-				++pCur;
-				++pLookup;
-				++pDst;
-			}
-			break;
+			x = 0;
+			++y;
 		}
 	}
+
+/*
 
 
 
@@ -813,6 +773,22 @@ namespace dle {
 		}
 		delete[] src;
 	}
+
+	void Layer::addEffect(Effect* pEffect) {
+		pEffect->retain();
+		effects.push_back(pEffect);
+	}
+
+	void Layer::removeEffect(Effect* pEffect) {
+		for (auto& it = effects.begin(); it != effects.end(); ++it) {
+			if (*it == pEffect) {
+				effects.erase(it);
+				pEffect->release();
+				return;
+			}
+		}
+	}
+
 
 	void Layer::bake(Color* dst) const {
 		int len = size.width * size.height;

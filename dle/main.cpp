@@ -15,18 +15,26 @@ int main()
 	// Create effects
 	dle::ColorOverlay* pColorOverlay = dle::ColorOverlay::create({ 255, 0, 100, 255 });
 	dle::Outline* pOutline = dle::Outline::create();
-	dle::Shadow* pShadow = dle::Shadow::create({ 0, 0, 0, 255 }, { 2, 3 }, 1);
+	dle::Shadow* pShadow = dle::Shadow::create();
 	dle::InnerShadow* pInnerShadow = dle::InnerShadow::create();
 	dle::Glow* pGlow = dle::Glow::create();
 	dle::InnerGlow* pInnerGlow = dle::InnerGlow::create();
+	dle::Gradient* pGradient = dle::Gradient::create({
+		{ { 41, 137, 204, 255 }, 0 },
+		{ { 255, 255, 255, 255 }, 50 },
+		{ { 144, 106, 0, 255 }, 52 },
+		{ { 217, 159, 0, 255 }, 64 },
+		{ { 255, 255, 255, 255 }, 100 },
+	}, -45);
 
 	// Create layers
 	dle::Layer* pLayer = dle::Layer::create(pImage, { 512, 512 }, { 
-		pColorOverlay,
-		pInnerGlow,
+	//	pColorOverlay,
+		pGradient,
+	//	pInnerGlow,
 	//	pInnerShadow,
-	//	pShadow,
-		pOutline,
+		pShadow,
+	//	pOutline,
 	//	pGlow,
 	});
 
@@ -38,6 +46,7 @@ int main()
 
 	// Release resources
 	pColorOverlay->release();
+	pGradient->release();
 	pOutline->release();
 	pShadow->release();
 	pInnerShadow->release();
