@@ -112,21 +112,21 @@ namespace dle
 		~Shadow() {}
 	};
 
-	/*
+	
 	class InnerShadow : public Effect {
 	public:
 		Color		color;
 		Offset		offset;
 		int			size;
 		eBlendMode	blendMode;
-		static InnerShadow* create(const Color& in_color, const Offset& in_offset, const int in_size, const eBlendMode in_blendMode = kBlendMode_Multiply);
-		void apply(Color* src, const Size& srcSize);
+		static InnerShadow* create(const Color& in_color = { 0, 0, 0, 245 }, const Offset& in_offset = { 3, 3 }, const int in_size = 3, const eBlendMode in_blendMode = kBlendMode_Multiply);
+		void apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize);
 	private:
 		friend Pool;
 		InnerShadow() {}
 		~InnerShadow() {}
 	};
-
+/*
 	class Glow : public Effect {
 	public:
 		Color		color;

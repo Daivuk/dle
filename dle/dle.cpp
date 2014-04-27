@@ -376,6 +376,56 @@ namespace dle {
 	}
 
 
+
+	InnerShadow* InnerShadow::create(const Color& color, const Offset& offset, const int size, const eBlendMode blendMode) {
+		lazyInitPool();
+		InnerShadow* pInnerShadow = new (g_effectPool.alloc()) InnerShadow();
+		pInnerShadow->color = color;
+		pInnerShadow->offset = offset;
+		pInnerShadow->size = size;
+		pInnerShadow->blendMode = blendMode;
+		return pInnerShadow;
+	}
+
+	void InnerShadow::apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize) {
+		// We create a blur first
+		Color* blurImg = new Color[srcSize.width * srcSize.height];
+		memset(blurImg, 0, sizeof(Color) * srcSize.width * srcSize.height);
+		dle::Blur* pBlur = dle::Blur::create(size);
+		pBlur->apply(NULL, blurImg, src, srcSize);
+		pBlur->release();
+
+		// Use the blur to create our shadow, using the offset
+		Color* pEnd;
+		Color* pBlurPx = blurImg;
+		Color final = color;
+		if (offset.x < 0) {
+			pBlurPx -= offset.x;
+			pEnd = dst + srcSize.width * srcSize.height + offset.x;
+		}
+		else {
+			dst += offset.x;
+			src += offset.x;
+			pEnd = dst + srcSize.width * srcSize.height;
+		}
+		if (offset.y < 0) {
+			pBlurPx -= offset.y * srcSize.width;
+			pEnd += offset.y * srcSize.width;
+		}
+		else {
+			dst += offset.y * srcSize.width;
+			src += offset.y * srcSize.width;
+		}
+		while (dst != pEnd) {
+			final.a = ((255 - pBlurPx->a) * color.a) / 255;
+			final.a = final.a * src->a / 255;
+			blend(*dst, *src, final, blendMode);
+			++dst; ++src; ++pBlurPx;
+		}
+
+		delete[] blurImg;
+	}
+
 /*
 	Glow::Glow(const Color& in_color, const int in_size, const eBlendMode in_blendMode) :
 		color(in_color), size{ in_size }, blendMode{ in_blendMode } {};

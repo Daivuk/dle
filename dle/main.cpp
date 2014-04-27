@@ -14,12 +14,14 @@ int main()
 
 	// Create effects
 	dle::ColorOverlay* pColorOverlay = dle::ColorOverlay::create({ 255, 0, 100, 255 });
-	dle::Outline* pOutline = dle::Outline::create({ 0, 0, 0, 245 }, 2);
+	dle::Outline* pOutline = dle::Outline::create();
 	dle::Shadow* pShadow = dle::Shadow::create();
+	dle::InnerShadow* pInnerShadow = dle::InnerShadow::create();
 
 	// Create layers
 	dle::Layer* pLayer = dle::Layer::create(pImage, { 512, 512 }, { 
 		pColorOverlay,
+		pInnerShadow,
 		pShadow,
 		pOutline,
 	});
@@ -34,6 +36,7 @@ int main()
 	pColorOverlay->release();
 	pOutline->release();
 	pShadow->release();
+	pInnerShadow->release();
 	pLayer->release();
 
 	// Save image
