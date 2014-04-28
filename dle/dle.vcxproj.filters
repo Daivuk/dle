@@ -20,8 +20,5 @@
     <ClInclude Include="dle.h">
       <Filter>dle</Filter>
     </ClInclude>
-    <ClInclude Include="dletables.h">
-      <Filter>dle</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>
