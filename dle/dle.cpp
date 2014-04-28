@@ -72,7 +72,7 @@ namespace dle {
 			// Lerp final alpha composite
 			lerp(out, dst, tmpOut, src.a);
 			break;
-		case kBlendMode_Additive:
+		case kBlendMode_Screen:
 			// First, we want to make the dst color the same as our src color in the case
 			// of the alpha being very low. Because images might be black and we end up with black
 			// shadow. And we don't want that
