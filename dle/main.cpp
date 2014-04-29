@@ -1,28 +1,28 @@
 #include <iostream>
-#include "dle.h"
 #include <Windows.h>
 #include <sstream>
+#include "dle.h"
 
-int main() 
-{
+int main() {
 	// Load the image
 	FILE* pFic;
 	fopen_s(&pFic, "img.raw", "rb");
 	unsigned char* pImageData = new unsigned char[512 * 512 * 4];
 	fread(pImageData, 1, 512 * 512 * 4, pFic);
 	fclose(pFic);
+	fopen_s(&pFic, "img2.raw", "rb");
+	unsigned char* pImage2Data = new unsigned char[512 * 512 * 4];
+	fread(pImage2Data, 1, 512 * 512 * 4, pFic);
+	fclose(pFic);
 
 
 
-	dle::Size imageSize{ 512, 512 };
 
-	dle::applyLayers(pImageData, imageSize,
-		dle::Layer(pImageData, imageSize, dle::kBlendMode_Normal,
-			dle::Outline(),
-			dle::Shadow()),
-		dle::Layer(pImageData, imageSize, dle::kBlendMode_Multiply,
-			dle::ColorOverlay(),
-			dle::InnerGlow()));
+	dle::applyEffects(pImageData, { 512, 512, },
+		dle::Outline({ 0, 0, 0, 245 }, 3),
+		dle::Shadow(),
+		dle::InnerShadow());
+
 
 
 
@@ -31,6 +31,7 @@ int main()
 	fwrite(pImageData, 1, 512 * 512 * 4, pFic);
 	fclose(pFic);
 	delete[] pImageData;
+	delete[] pImage2Data;
 
 	// Pause then quit
 	system("pause");
