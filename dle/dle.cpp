@@ -1,6 +1,8 @@
 #include <stdlib.h>
-#include "dle.h"
+#include <thread>
 #include <assert.h>
+#include <future>
+#include "dle.h"
 
 
 namespace dle {
@@ -117,14 +119,26 @@ namespace dle {
 	ColorOverlay::ColorOverlay(const Color& in_color, const eBlendMode in_blendMode) :
 		color(in_color), blendMode(in_blendMode) {}
 
-	void ColorOverlay::apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize) const {
-		Color* pEnd = src + srcSize.width * srcSize.height;
+	void overlayPS(Color* dst, Color* src, const Color* end, const ColorOverlay& effect) {
+		const dle::eBlendMode blendMode = effect.blendMode;
+		while (src != end) {
+			blend(*dst, *src, effect.color, blendMode);
 
-		while (src != pEnd) {
-			blend(*dst, *src, color, blendMode);
 			dst->a = src->a; // Mask overlay
 			++src; ++dst;
 		}
+	}
+
+	void ColorOverlay::apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize) const {
+		auto len = srcSize.width * srcSize.height;
+		auto threadCount = std::thread::hardware_concurrency();
+		std::vector<std::future<void>> workers;
+		unsigned int i;
+		for (i = 0; i < threadCount - 1; ++i) {
+			workers.push_back(std::async(dle::overlayPS, dst + len * i / threadCount, src + len * i / threadCount, src + len * (i + 1) / threadCount, *this));
+		}
+		dle::overlayPS(dst + len * i / threadCount, src + len * i / threadCount, src + len * (i + 1) / threadCount, *this);
+		for (auto& worker : workers) worker.wait();
 	}
 
 
@@ -437,11 +451,19 @@ namespace dle {
 		for (auto* pEffect : effects) {
 			delete pEffect;
 		}
-		delete[] src;
+	//	delete[] src;
 	}
 
 	void Layer::bake(void* dst) const {
 		bake((Color*) dst);
+	}
+
+	void bakePS(Color* dst, Color* src, Color* end, const eBlendMode& blendMode) {
+		Color tmpOut;
+		while (dst != end) {
+			blend(*dst, *dst, *src, blendMode);
+			++dst; ++src;
+		}
 	}
 
 	void Layer::bake(Color* dst) const {
@@ -458,13 +480,14 @@ namespace dle {
 			pEffect->apply(dst, tmpImg, tmpSrc, size);
 		}
 
-		// Bake the final layer image onto the destination, using proper blending
-		Color* src = tmpImg;
-		Color* pEnd = dst + len;
-		while (dst != pEnd) {
-			blend(*dst, *dst, *src, blendMode);
-			++dst; ++src;
+		auto threadCount = std::thread::hardware_concurrency();
+		std::vector<std::future<void>> workers;
+		unsigned int i;
+		for (i = 0; i < threadCount - 1; ++i) {
+			workers.push_back(std::async(dle::bakePS, dst + len * i / threadCount, tmpImg + len * i / threadCount, dst + len * (i + 1) / threadCount, blendMode));
 		}
+		dle::bakePS(dst + len * i / threadCount, tmpImg + len * i / threadCount, dst + len * (i + 1) / threadCount, blendMode);
+		for (auto& worker : workers) worker.wait();
 
 		delete[] tmpImg;
 	}

@@ -172,7 +172,7 @@ namespace dle
 		Offset		offset;		/**< Offset. {0,0} means it will be directly under the image. {0,5} will be shifted down by 5 pixels */
 		int			size;		/**< Size of the blur. 0 = no blur. 5 = 9x9 blur, where {5,5} is the center. */
 		eBlendMode	blendMode;	/**< Blend mode to apply the shadow to the underlying image */
-		Shadow(const Color& color = { 0, 0, 0, 255 }, const Offset& offset = { 3, 5 }, const int size = 10, const eBlendMode blendMode = kBlendMode_Multiply);
+		Shadow(const Color& color = { 0, 0, 0, 255 }, const Offset& offset = { 3, 5 }, const int size = 5, const eBlendMode blendMode = kBlendMode_Multiply);
 		void apply(Color* baseLayer, Color* dst, Color* src, const Size& srcSize) const;
 	};
 	

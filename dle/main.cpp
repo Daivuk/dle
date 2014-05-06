@@ -1,6 +1,7 @@
 #include <iostream>
 #include <Windows.h>
 #include <sstream>
+#include <chrono>
 #include "dle.h"
 
 int main() {
@@ -17,12 +18,18 @@ int main() {
 
 
 
+//	for (int j = 0; j < 10; ++j) {
+		auto start = std::chrono::high_resolution_clock::now();
 
-	dle::applyEffects(pImageData, { 512, 512, },
-		dle::Outline({ 0, 0, 0, 245 }, 3),
-		dle::Shadow(),
-		dle::InnerShadow());
+		for (int i = 0; i < 100; ++i) {
+			dle::applyEffects(pImageData, { 512, 512 }, dle::ColorOverlay(), dle::Shadow());
+		}
 
+		auto end = std::chrono::high_resolution_clock::now();
+		auto ellapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+		std::cout << "Time: " << ellapsed.count() << std::endl;
+//	}
 
 
 

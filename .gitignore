@@ -4,3 +4,5 @@
 /*.opensdf
 /Debug
 /dle/output.raw
+/Release
+/dle/Release
